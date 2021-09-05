@@ -25,7 +25,7 @@ func createTestUser(ctx context.Context, t *testing.T, uid string) error {
 		Price:         200.50,
 		PostalAddress: "Home, Test Address",
 	}
-	_, err := db.Create(ctx, UserCollectionName, data)
+	_, err := db.Create(ctx, data)
 	if err != nil {
 		t.Errorf("error, unable to create test user, %v", err)
 	}
@@ -99,7 +99,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.Create(tt.args.ctx, tt.args.collectionName, tt.args.data)
+			got, err := db.Create(tt.args.ctx, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -109,7 +109,7 @@ func TestCreate(t *testing.T) {
 			}
 		})
 	}
-	_, err := db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
+	_, err := db.Delete(ctx, bson.M{"_id": UID})
 	if err != nil {
 		t.Errorf("error, unable to delete test user, %v", err)
 		return
@@ -148,7 +148,7 @@ func TestGet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.Get(tt.args.ctx, tt.args.collectionName, tt.args.filter)
+			got, err := db.Get(tt.args.ctx, tt.args.filter)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -160,7 +160,7 @@ func TestGet(t *testing.T) {
 		})
 	}
 
-	_, err := db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
+	_, err := db.Delete(ctx, bson.M{"_id": UID})
 	if err != nil {
 		t.Errorf("error, unable to delete test user, %v", err)
 		return
@@ -201,7 +201,7 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.Update(tt.args.ctx, tt.args.collectionName, tt.args.filter, tt.args.data)
+			got, err := db.Update(tt.args.ctx, tt.args.filter, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -213,7 +213,7 @@ func TestUpdate(t *testing.T) {
 		})
 	}
 
-	_, err := db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
+	_, err := db.Delete(ctx, bson.M{"_id": UID})
 	if err != nil {
 		t.Errorf("error, unable to delete test user, %v", err)
 		return
@@ -253,7 +253,7 @@ func TestDelete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.Delete(tt.args.ctx, tt.args.collectionName, tt.args.filer)
+			got, err := db.Delete(tt.args.ctx, tt.args.filer)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return

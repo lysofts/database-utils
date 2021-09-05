@@ -60,7 +60,7 @@ func (d *Database) GetCollection() *mongo.Collection {
 }
 
 //Create creates an object in database
-func (d *Database) Create(ctx context.Context, collectionName string, data interface{}) (*mongo.InsertOneResult, error) {
+func (d *Database) Create(ctx context.Context, data interface{}) (*mongo.InsertOneResult, error) {
 	collection := d.GetCollection()
 
 	result, err := collection.InsertOne(ctx, data)
@@ -72,7 +72,7 @@ func (d *Database) Create(ctx context.Context, collectionName string, data inter
 }
 
 //Get retrieves data from the database
-func (d *Database) Get(ctx context.Context, collectionName string, filter bson.M) (*mongo.Cursor, error) {
+func (d *Database) Get(ctx context.Context, filter bson.M) (*mongo.Cursor, error) {
 	collection := d.GetCollection()
 
 	result, err := collection.Find(ctx, filter)
@@ -84,7 +84,7 @@ func (d *Database) Get(ctx context.Context, collectionName string, filter bson.M
 }
 
 //Update updates the filtered result using provided data
-func (d *Database) Update(ctx context.Context, collectionName string, filter bson.M, data interface{}) (*mongo.UpdateResult, error) {
+func (d *Database) Update(ctx context.Context, filter bson.M, data interface{}) (*mongo.UpdateResult, error) {
 	updateData := bson.M{"$set": data}
 
 	collection := d.GetCollection()
@@ -98,7 +98,7 @@ func (d *Database) Update(ctx context.Context, collectionName string, filter bso
 }
 
 //Delete deletes all records matching the filter inside the collection
-func (d *Database) Delete(ctx context.Context, collectionName string, filer bson.M) (*mongo.DeleteResult, error) {
+func (d *Database) Delete(ctx context.Context, filer bson.M) (*mongo.DeleteResult, error) {
 
 	collection := d.GetCollection()
 
