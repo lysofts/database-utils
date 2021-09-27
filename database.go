@@ -18,7 +18,7 @@ type Database struct {
 	Choice repository.DatabaseUtil
 }
 
-func NewDatabase(choice string) repository.DatabaseUtil {
+func NewDatabase(choice string) Database {
 	db := Database{}
 	switch choice {
 	case POSTGRES:
@@ -29,7 +29,7 @@ func NewDatabase(choice string) repository.DatabaseUtil {
 		db.Choice = mongo.New()
 	}
 
-	return &db
+	return db
 }
 
 //Create creates an object in database
