@@ -1,4 +1,4 @@
-package databaseutils
+package helpers
 
 import (
 	"log"
