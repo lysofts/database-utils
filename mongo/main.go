@@ -17,23 +17,16 @@ const (
 )
 
 type Database struct {
-	ctx            context.Context
-	collectionName string
+	mongo.Client
+	URL  string
+	Name string
 }
 
-func New(ctx context.Context, collectionName string) *Database {
-	return &Database{
-		ctx:            ctx,
-		collectionName: collectionName,
-	}
-}
+func New() *Database {
+	url := databaseutils.GetEnv("AUTH_DATABASE_URL")
+	name := databaseutils.GetEnv("AUTH_DATABASE_NAME")
 
-//Connect func connects client to authentication database
-func (d *Database) Connect() (*mongo.Client, error) {
-
-	databaseURL := databaseutils.GetEnv("AUTH_DATABASE_URL")
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(databaseURL))
+	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,24 +37,18 @@ func (d *Database) Connect() (*mongo.Client, error) {
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatal(err)
-		return nil, fmt.Errorf("unable to connect to database: %v", err)
 	}
 
-	return client, nil
-}
-
-//GetCollection is a  function makes a connection with a
-//collection in the database
-func (d *Database) GetCollection() *mongo.Collection {
-	databaseName := databaseutils.GetEnv("AUTH_DATABASE_NAME")
-	client, _ := d.Connect()
-	collection := client.Database(databaseName).Collection(d.collectionName)
-	return collection
+	return &Database{
+		Client: *client,
+		URL:    url,
+		Name:   name,
+	}
 }
 
 //Create creates an object in database
-func (d *Database) Create(ctx context.Context, data interface{}) (*mongo.InsertOneResult, error) {
-	collection := d.GetCollection()
+func (d *Database) Create(ctx context.Context, collectionName string, data interface{}) (*mongo.InsertOneResult, error) {
+	collection := d.Database(d.Name).Collection(collectionName)
 
 	result, err := collection.InsertOne(ctx, data)
 	if err != nil {
@@ -72,8 +59,8 @@ func (d *Database) Create(ctx context.Context, data interface{}) (*mongo.InsertO
 }
 
 //Get retrieves data from the database
-func (d *Database) Get(ctx context.Context, filter bson.M) (*mongo.Cursor, error) {
-	collection := d.GetCollection()
+func (d *Database) Get(ctx context.Context, collectionName string, filter bson.M) (*mongo.Cursor, error) {
+	collection := d.Database(d.Name).Collection(collectionName)
 
 	result, err := collection.Find(ctx, filter)
 	if err != nil {
@@ -84,10 +71,11 @@ func (d *Database) Get(ctx context.Context, filter bson.M) (*mongo.Cursor, error
 }
 
 //Update updates the filtered result using provided data
-func (d *Database) Update(ctx context.Context, filter bson.M, data interface{}) (*mongo.UpdateResult, error) {
-	updateData := bson.M{"$set": data}
+func (d *Database) Update(ctx context.Context, collectionName string, filter bson.M, data interface{}) (*mongo.UpdateResult, error) {
 
-	collection := d.GetCollection()
+	collection := d.Database(d.Name).Collection(collectionName)
+
+	updateData := bson.M{"$set": data}
 
 	result, err := collection.UpdateOne(ctx, filter, updateData)
 	if err != nil {
@@ -98,9 +86,9 @@ func (d *Database) Update(ctx context.Context, filter bson.M, data interface{}) 
 }
 
 //Delete deletes all records matching the filter inside the collection
-func (d *Database) Delete(ctx context.Context, filer bson.M) (*mongo.DeleteResult, error) {
+func (d *Database) Delete(ctx context.Context, collectionName string, filer bson.M) (*mongo.DeleteResult, error) {
 
-	collection := d.GetCollection()
+	collection := d.Database(d.Name).Collection(collectionName)
 
 	result, err := collection.DeleteMany(ctx, filer)
 	if err != nil {
