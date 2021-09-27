@@ -3,28 +3,28 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	databaseutils "github.com/lysofts/database-utils"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	UserCollectionName = "users"
+	UserCollectionName = "test_users"
 )
 
 type Database interface {
-	GetOne(ctx context.Context, collectionName string, data interface{}) *mongo.SingleResult
-	Create(ctx context.Context, collectionName string, data interface{}) (*mongo.InsertOneResult, error)
-	Get(ctx context.Context, collectionName string, filter bson.M) (*mongo.Cursor, error)
-	Update(ctx context.Context, collectionName string, filter bson.M, data interface{}) (*mongo.UpdateResult, error)
-	Delete(ctx context.Context, collectionName string, filer bson.M) (*mongo.DeleteResult, error)
+	GetOne(ctx context.Context, collectionName string, payload interface{}) (interface{}, error)
+	Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error)
+	Get(ctx context.Context, collectionName string, filter bson.M) (interface{}, error)
+	Update(ctx context.Context, collectionName string, filter bson.M, payload interface{}) (interface{}, error)
+	Delete(ctx context.Context, collectionName string, filer bson.M) (int64, error)
 }
 
-type Service struct {
+type DatabaseImpl struct {
 	mongo.Client
 	URL  string
 	Name string
@@ -47,7 +47,7 @@ func New() Database {
 		log.Fatal(err)
 	}
 
-	return &Service{
+	return &DatabaseImpl{
 		Client: *client,
 		URL:    url,
 		Name:   name,
@@ -55,19 +55,26 @@ func New() Database {
 }
 
 //GetOne finds and returns exactly one object
-func (d *Service) GetOne(ctx context.Context, collectionName string, data interface{}) *mongo.SingleResult {
+func (d *DatabaseImpl) GetOne(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result := collection.FindOne(ctx, data)
+	result := collection.FindOne(ctx, payload)
 
-	return result
+	data := make(map[string]interface{})
+
+	err := result.Decode(data)
+
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 //Create creates an object in database
-func (d *Service) Create(ctx context.Context, collectionName string, data interface{}) (*mongo.InsertOneResult, error) {
+func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result, err := collection.InsertOne(ctx, data)
+	result, err := collection.InsertOne(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("creation error: %v", err)
 	}
@@ -76,23 +83,35 @@ func (d *Service) Create(ctx context.Context, collectionName string, data interf
 }
 
 //Get retrieves data from the database
-func (d *Service) Get(ctx context.Context, collectionName string, filter bson.M) (*mongo.Cursor, error) {
+func (d *DatabaseImpl) Get(ctx context.Context, collectionName string, filter bson.M) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("get error: %v", err)
 	}
 
-	return result, nil
+	defer cursor.Close(ctx)
+
+	var data []interface{}
+	for cursor.Next(ctx) {
+		episode := make(map[string]interface{})
+		if err = cursor.Decode(&episode); err != nil {
+			log.Fatal(err)
+		}
+		data = append(data, episode)
+		fmt.Println(episode)
+	}
+
+	return data, nil
 }
 
 //Update updates the filtered result using provided data
-func (d *Service) Update(ctx context.Context, collectionName string, filter bson.M, data interface{}) (*mongo.UpdateResult, error) {
+func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, filter bson.M, payload interface{}) (interface{}, error) {
 
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	updateData := bson.M{"$set": data}
+	updateData := bson.M{"$set": payload}
 
 	result, err := collection.UpdateOne(ctx, filter, updateData)
 	if err != nil {
@@ -103,14 +122,14 @@ func (d *Service) Update(ctx context.Context, collectionName string, filter bson
 }
 
 //Delete deletes all records matching the filter inside the collection
-func (d *Service) Delete(ctx context.Context, collectionName string, filer bson.M) (*mongo.DeleteResult, error) {
+func (d *DatabaseImpl) Delete(ctx context.Context, collectionName string, filer bson.M) (int64, error) {
 
 	collection := d.Database(d.Name).Collection(collectionName)
 
 	result, err := collection.DeleteMany(ctx, filer)
 	if err != nil {
-		return nil, fmt.Errorf("delete error: %v", err)
+		return 0, fmt.Errorf("delete error: %v", err)
 	}
 
-	return result, nil
+	return result.DeletedCount, nil
 }
