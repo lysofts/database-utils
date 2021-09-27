@@ -50,8 +50,11 @@ func New() repository.DatabaseUtil {
 //Create creates an object in database
 func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
-
-	result, err := collection.InsertOne(ctx, payload)
+	p, err := utils.JsonToBson(payload)
+	if err != nil {
+		return nil, err
+	}
+	result, err := collection.InsertOne(ctx, p)
 	if err != nil {
 		return nil, fmt.Errorf("creation error: %v", err)
 	}
@@ -72,7 +75,12 @@ func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+
+	p, err := utils.BsonToJson(data)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 //Read retrieves data from the database
@@ -88,11 +96,16 @@ func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query in
 
 	var data []utils.Map
 	for cursor.Next(ctx) {
-		episode := make(map[string]interface{})
+		episode := utils.Map{}
 		if err = cursor.Decode(&episode); err != nil {
 			log.Fatal(err)
 		}
-		data = append(data, episode)
+
+		p, err := utils.BsonToJson(data)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, p)
 	}
 
 	return data, nil
@@ -103,9 +116,19 @@ func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, query 
 
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	updateData := bson.M{"$set": payload}
+	q, err := utils.JsonToBson(query)
+	if err != nil {
+		return nil, err
+	}
 
-	result, err := collection.UpdateOne(ctx, query, updateData)
+	p, err := utils.JsonToBson(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	updateData := bson.M{"$set": p}
+
+	result, err := collection.UpdateOne(ctx, q, updateData)
 	if err != nil {
 		return nil, fmt.Errorf("update error: %v", err)
 	}
@@ -115,10 +138,14 @@ func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, query 
 
 //Delete deletes all records matching the filter inside the collection
 func (d *DatabaseImpl) Delete(ctx context.Context, collectionName string, query interface{}) (int64, error) {
-
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result, err := collection.DeleteMany(ctx, query)
+	q, err := utils.JsonToBson(query)
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := collection.DeleteMany(ctx, q)
 	if err != nil {
 		return 0, fmt.Errorf("delete error: %v", err)
 	}
