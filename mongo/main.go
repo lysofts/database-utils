@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	databaseutils "github.com/lysofts/database-utils"
+	"github.com/lysofts/database-utils/helpers"
+	"github.com/lysofts/database-utils/repository"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,23 +17,15 @@ const (
 	UserCollectionName = "test_users"
 )
 
-type Database interface {
-	GetOne(ctx context.Context, collectionName string, payload interface{}) (interface{}, error)
-	Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error)
-	Get(ctx context.Context, collectionName string, filter bson.M) (interface{}, error)
-	Update(ctx context.Context, collectionName string, filter bson.M, payload interface{}) (interface{}, error)
-	Delete(ctx context.Context, collectionName string, filer bson.M) (int64, error)
-}
-
 type DatabaseImpl struct {
 	mongo.Client
 	URL  string
 	Name string
 }
 
-func New() Database {
-	url := databaseutils.GetEnv("AUTH_DATABASE_URL")
-	name := databaseutils.GetEnv("AUTH_DATABASE_NAME")
+func New() repository.DatabaseUtil {
+	url := helpers.GetEnv("AUTH_DATABASE_URL")
+	name := helpers.GetEnv("AUTH_DATABASE_NAME")
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
@@ -54,11 +47,11 @@ func New() Database {
 	}
 }
 
-//GetOne finds and returns exactly one object
-func (d *DatabaseImpl) GetOne(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
+//ReadOne finds and returns exactly one object
+func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result := collection.FindOne(ctx, payload)
+	result := collection.FindOne(ctx, query)
 
 	data := make(map[string]interface{})
 
@@ -82,11 +75,11 @@ func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payloa
 	return result, nil
 }
 
-//Get retrieves data from the database
-func (d *DatabaseImpl) Get(ctx context.Context, collectionName string, filter bson.M) (interface{}, error) {
+//Read retrieves data from the database
+func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("get error: %v", err)
 	}
@@ -107,13 +100,13 @@ func (d *DatabaseImpl) Get(ctx context.Context, collectionName string, filter bs
 }
 
 //Update updates the filtered result using provided data
-func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, filter bson.M, payload interface{}) (interface{}, error) {
+func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, query interface{}, payload interface{}) (interface{}, error) {
 
 	collection := d.Database(d.Name).Collection(collectionName)
 
 	updateData := bson.M{"$set": payload}
 
-	result, err := collection.UpdateOne(ctx, filter, updateData)
+	result, err := collection.UpdateOne(ctx, query, updateData)
 	if err != nil {
 		return nil, fmt.Errorf("update error: %v", err)
 	}
@@ -122,11 +115,11 @@ func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, filter
 }
 
 //Delete deletes all records matching the filter inside the collection
-func (d *DatabaseImpl) Delete(ctx context.Context, collectionName string, filer bson.M) (int64, error) {
+func (d *DatabaseImpl) Delete(ctx context.Context, collectionName string, query interface{}) (int64, error) {
 
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result, err := collection.DeleteMany(ctx, filer)
+	result, err := collection.DeleteMany(ctx, query)
 	if err != nil {
 		return 0, fmt.Errorf("delete error: %v", err)
 	}
