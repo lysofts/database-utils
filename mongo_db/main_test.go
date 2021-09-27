@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/lysofts/database-utils/models"
 	"github.com/lysofts/database-utils/mongo_db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,10 +15,18 @@ const (
 	UserCollectionName = "test_users"
 )
 
+//TestData .. is the object used to test data objects CRUD
+type TestData struct {
+	ID            string  `json:"id,omitempty" bson:"_id"`
+	Name          string  `json:"name,omitempty"`
+	Price         float32 `json:"price,omitempty"`
+	PostalAddress string  `json:"postalAddress,omitempty" bson:"postalAddress"`
+}
+
 //createTestUser create test data
 func createTestUser(ctx context.Context, t *testing.T, uid string) error {
 	db := mongo_db.New(ctx, UserCollectionName)
-	data := models.TestData{
+	data := TestData{
 		ID:            uid,
 		Name:          "Test",
 		Price:         200.50,
@@ -71,7 +78,7 @@ func TestCreate(t *testing.T) {
 
 	UID := uuid.NewString()
 
-	data := models.TestData{
+	data := TestData{
 		ID:            UID,
 		Name:          "Test",
 		Price:         200.50,
