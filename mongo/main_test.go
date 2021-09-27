@@ -1,4 +1,4 @@
-package mongo_db_test
+package mongo_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/lysofts/database-utils/mongo_db"
+	mongo_db "github.com/lysofts/database-utils/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
