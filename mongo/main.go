@@ -50,11 +50,8 @@ func New() repository.DatabaseUtil {
 //Create creates an object in database
 func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
-	p, err := utils.JsonToBson(payload)
-	if err != nil {
-		return nil, err
-	}
-	result, err := collection.InsertOne(ctx, p)
+
+	result, err := collection.InsertOne(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("creation error: %v", err)
 	}
@@ -101,7 +98,7 @@ func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query in
 			log.Fatal(err)
 		}
 
-		p, err := utils.BsonToJson(data)
+		p, err := utils.BsonToJson(episode)
 		if err != nil {
 			return nil, err
 		}
@@ -121,12 +118,7 @@ func (d *DatabaseImpl) Update(ctx context.Context, collectionName string, query 
 		return nil, err
 	}
 
-	p, err := utils.JsonToBson(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	updateData := bson.M{"$set": p}
+	updateData := bson.M{"$set": payload}
 
 	result, err := collection.UpdateOne(ctx, q, updateData)
 	if err != nil {
