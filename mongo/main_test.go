@@ -40,6 +40,73 @@ func createTestUser(ctx context.Context, t *testing.T, uid string) error {
 	return err
 }
 
+func TestDatabaseImpl_GetOne(t *testing.T) {
+	ctx := context.Background()
+	db := mongo_db.New()
+
+	UID := uuid.NewString()
+
+	err := createTestUser(ctx, t, UID)
+
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+
+	}
+
+	type args struct {
+		ctx            context.Context
+		collectionName string
+		data           interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantNil bool
+		wantErr bool
+	}{
+		{
+			name: "happy found one",
+			args: args{
+				ctx:            ctx,
+				collectionName: UserCollectionName,
+				data:           bson.M{"name": "Test"},
+			},
+			wantNil: false,
+			wantErr: false,
+		},
+
+		{
+			name: "sad unabale to find one",
+			args: args{
+				ctx:            ctx,
+				collectionName: UserCollectionName,
+				data:           bson.M{"name": "123"},
+			},
+			wantNil: true,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := db.GetOne(tt.args.ctx, tt.args.collectionName, tt.args.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseImpl.GetOne() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != nil && tt.wantNil {
+				t.Errorf("DatabaseImpl.GetOne() = %v, wantNil %v", got, tt.wantNil)
+			}
+		})
+	}
+
+	_, err = db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
+	if err != nil {
+		t.Errorf("error, unable to delete test user, %v", err)
+		return
+	}
+}
+
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 	db := mongo_db.New()
@@ -103,7 +170,11 @@ func TestGet(t *testing.T) {
 
 	UID := uuid.NewString()
 
-	_ = createTestUser(ctx, t, UID)
+	err := createTestUser(ctx, t, UID)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
 
 	type args struct {
 		ctx            context.Context
@@ -120,7 +191,17 @@ func TestGet(t *testing.T) {
 			name: "happy got test user by name",
 			args: args{
 				ctx: ctx, collectionName: UserCollectionName, filter: bson.M{
-					"firstName": "Test",
+					"name": "Test",
+				},
+			},
+			wantNil: false,
+			wantErr: false,
+		},
+		{
+			name: "sad: query does not match any",
+			args: args{
+				ctx: ctx, collectionName: UserCollectionName, filter: bson.M{
+					"name": "123",
 				},
 			},
 			wantNil: false,
@@ -141,7 +222,7 @@ func TestGet(t *testing.T) {
 		})
 	}
 
-	_, err := db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
+	_, err = db.Delete(ctx, UserCollectionName, bson.M{"_id": UID})
 	if err != nil {
 		t.Errorf("error, unable to delete test user, %v", err)
 		return
@@ -216,7 +297,7 @@ func TestDelete(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *mongo.DeleteResult
+		want    int64
 		wantErr bool
 	}{
 		{
@@ -227,9 +308,7 @@ func TestDelete(t *testing.T) {
 				filer:          bson.M{"_id": UID},
 			},
 			wantErr: false,
-			want: &mongo.DeleteResult{
-				DeletedCount: 1,
-			},
+			want:    1,
 		},
 	}
 	for _, tt := range tests {
