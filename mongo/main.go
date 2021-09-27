@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lysofts/database-utils/helpers"
 	"github.com/lysofts/database-utils/repository"
+	"github.com/lysofts/database-utils/utils"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,8 +24,8 @@ type DatabaseImpl struct {
 }
 
 func New() repository.DatabaseUtil {
-	url := helpers.GetEnv("AUTH_DATABASE_URL")
-	name := helpers.GetEnv("AUTH_DATABASE_NAME")
+	url := utils.GetEnv("AUTH_DATABASE_URL")
+	name := utils.GetEnv("AUTH_DATABASE_NAME")
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
@@ -47,8 +47,20 @@ func New() repository.DatabaseUtil {
 	}
 }
 
+//Create creates an object in database
+func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
+	collection := d.Database(d.Name).Collection(collectionName)
+
+	result, err := collection.InsertOne(ctx, payload)
+	if err != nil {
+		return nil, fmt.Errorf("creation error: %v", err)
+	}
+
+	return result, nil
+}
+
 //ReadOne finds and returns exactly one object
-func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
+func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (utils.Map, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
 	result := collection.FindOne(ctx, query)
@@ -63,20 +75,8 @@ func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query
 	return data, nil
 }
 
-//Create creates an object in database
-func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
-	collection := d.Database(d.Name).Collection(collectionName)
-
-	result, err := collection.InsertOne(ctx, payload)
-	if err != nil {
-		return nil, fmt.Errorf("creation error: %v", err)
-	}
-
-	return result, nil
-}
-
 //Read retrieves data from the database
-func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
+func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) ([]utils.Map, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
 	cursor, err := collection.Find(ctx, query)
@@ -86,14 +86,13 @@ func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query in
 
 	defer cursor.Close(ctx)
 
-	var data []interface{}
+	var data []utils.Map
 	for cursor.Next(ctx) {
 		episode := make(map[string]interface{})
 		if err = cursor.Decode(&episode); err != nil {
 			log.Fatal(err)
 		}
 		data = append(data, episode)
-		fmt.Println(episode)
 	}
 
 	return data, nil

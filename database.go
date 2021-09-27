@@ -6,6 +6,7 @@ import (
 	"github.com/lysofts/database-utils/mongo"
 	"github.com/lysofts/database-utils/postres"
 	"github.com/lysofts/database-utils/repository"
+	"github.com/lysofts/database-utils/utils"
 )
 
 const (
@@ -31,18 +32,18 @@ func NewDatabase(choice string) repository.DatabaseUtil {
 	return &db
 }
 
-//ReadOne finds and returns exactly one object
-func (db *Database) ReadOne(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
-	return db.Choice.ReadOne(ctx, collectionName, query)
-}
-
 //Create creates an object in database
 func (db *Database) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	return db.Choice.Create(ctx, collectionName, payload)
 }
 
+//ReadOne finds and returns exactly one object
+func (db *Database) ReadOne(ctx context.Context, collectionName string, query interface{}) (utils.Map, error) {
+	return db.Choice.ReadOne(ctx, collectionName, query)
+}
+
 //Read retrieves data from the database
-func (db *Database) Read(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
+func (db *Database) Read(ctx context.Context, collectionName string, query interface{}) ([]utils.Map, error) {
 	return db.Choice.Read(ctx, collectionName, query)
 }
 

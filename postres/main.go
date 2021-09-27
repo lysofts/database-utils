@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lysofts/database-utils/repository"
+	"github.com/lysofts/database-utils/utils"
 )
 
 const (
@@ -17,20 +18,20 @@ func New() repository.DatabaseUtil {
 	return &DatabaseImpl{}
 }
 
-//ReadOne finds and returns exactly one object
-func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
-	//TODO add implementation
-	return nil, nil
-}
-
 //Create creates an object in database
 func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
 	//TODO add implementation
 	return nil, nil
 }
 
+//ReadOne finds and returns exactly one object
+func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (utils.Map, error) {
+	//TODO add implementation
+	return nil, nil
+}
+
 //Read retrieves data from the database
-func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) (interface{}, error) {
+func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) ([]utils.Map, error) {
 	//TODO add implementation
 	return nil, nil
 }
