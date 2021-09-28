@@ -63,11 +63,16 @@ func (d *DatabaseImpl) Create(ctx context.Context, collectionName string, payloa
 func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query interface{}) (utils.Map, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	result := collection.FindOne(ctx, query)
+	q, err := utils.JsonToBson(query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := collection.FindOne(ctx, q)
 
 	data := make(map[string]interface{})
 
-	err := result.Decode(data)
+	err = result.Decode(data)
 
 	if err != nil {
 		return nil, err
@@ -77,6 +82,7 @@ func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query
 	if err != nil {
 		return nil, err
 	}
+
 	return p, nil
 }
 
@@ -84,7 +90,12 @@ func (d *DatabaseImpl) ReadOne(ctx context.Context, collectionName string, query
 func (d *DatabaseImpl) Read(ctx context.Context, collectionName string, query interface{}) ([]utils.Map, error) {
 	collection := d.Database(d.Name).Collection(collectionName)
 
-	cursor, err := collection.Find(ctx, query)
+	q, err := utils.JsonToBson(query)
+	if err != nil {
+		return nil, err
+	}
+
+	cursor, err := collection.Find(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("get error: %v", err)
 	}
