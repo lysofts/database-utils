@@ -33,26 +33,26 @@ func NewDatabase(choice string) Database {
 }
 
 //Create creates an object in database
-func (db *Database) Create(ctx context.Context, collectionName string, payload interface{}) (interface{}, error) {
-	return db.Choice.Create(ctx, collectionName, payload)
+func (db *Database) Create(ctx context.Context, table utils.DatabaseTable, payload interface{}) (interface{}, error) {
+	return db.Choice.Create(ctx, table, payload)
 }
 
 //ReadOne finds and returns exactly one object
-func (db *Database) ReadOne(ctx context.Context, collectionName string, query interface{}) (utils.Map, error) {
-	return db.Choice.ReadOne(ctx, collectionName, query)
+func (db *Database) ReadOne(ctx context.Context, table utils.DatabaseTable, query interface{}) (utils.Map, error) {
+	return db.Choice.ReadOne(ctx, table, query)
 }
 
 //Read retrieves data from the database
-func (db *Database) Read(ctx context.Context, collectionName string, query interface{}) ([]utils.Map, error) {
-	return db.Choice.Read(ctx, collectionName, query)
+func (db *Database) Read(ctx context.Context, table utils.DatabaseTable, query interface{}) ([]utils.Map, error) {
+	return db.Choice.Read(ctx, table, query)
 }
 
 //Update updates the filtered result using provided data
-func (db *Database) Update(ctx context.Context, collectionName string, query interface{}, payload interface{}) (interface{}, error) {
-	return db.Choice.Update(ctx, collectionName, query, payload)
+func (db *Database) Update(ctx context.Context, table utils.DatabaseTable, query interface{}, payload interface{}) (interface{}, error) {
+	return db.Choice.Update(ctx, table, query, payload)
 }
 
 //Delete deletes all records matching the filter inside the collection
-func (db *Database) Delete(ctx context.Context, collectionName string, query interface{}) (int64, error) {
-	return db.Choice.Delete(ctx, collectionName, query)
+func (db *Database) Delete(ctx context.Context, table utils.DatabaseTable, query interface{}) (int64, error) {
+	return db.Choice.Delete(ctx, table, query)
 }
